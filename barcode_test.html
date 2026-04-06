@@ -129,6 +129,46 @@
             margin-bottom: 20px;
         }
         .header h1 { margin-bottom: 0; }
+
+        #barcode canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 16px 12px; }
+            h1 { font-size: 1.2rem; }
+            textarea { height: 140px; font-size: 16px; }
+            .toolbar {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .toolbar button {
+                width: 100%;
+                padding: 12px 18px;
+                font-size: 1rem;
+                min-height: 44px;
+            }
+            .save-group {
+                margin-left: 0;
+                width: 100%;
+            }
+            .save-group button {
+                flex: 1;
+                padding: 12px 10px;
+                font-size: 0.9rem;
+                min-height: 44px;
+            }
+            #barcode { padding: 12px; overflow-x: auto; }
+            .theme-toggle { min-width: 44px; min-height: 44px; }
+        }
+
+        @media (max-width: 380px) {
+            body { padding: 12px 8px; }
+            h1 { font-size: 1.05rem; }
+            .save-group { flex-direction: column; }
+            .save-group button { width: 100%; }
+        }
     </style>
 
     <script src="bcmath-min.js"></script>
@@ -136,7 +176,16 @@
 
     <script>
         var currentBarcode = null;
-        var BW = 2, BH = 2;
+
+        function getScale() {
+            var container = document.getElementById('barcode');
+            if (!container || !currentBarcode) return { bw: 2, bh: 2 };
+            var available = container.clientWidth - 32;
+            var cols = currentBarcode['num_cols'];
+            var bw = Math.max(1, Math.floor(available / cols));
+            bw = Math.min(bw, 3);
+            return { bw: bw, bh: bw };
+        }
 
         function isDark() {
             return document.documentElement.getAttribute('data-theme') === 'dark';
@@ -175,9 +224,12 @@
             var container = document.getElementById('barcode');
             container.innerHTML = '';
 
+            var scale = getScale();
+            var bw = scale.bw, bh = scale.bh;
+
             var canvas = document.createElement('canvas');
-            canvas.width = BW * barcode['num_cols'];
-            canvas.height = BH * barcode['num_rows'];
+            canvas.width = bw * barcode['num_cols'];
+            canvas.height = bh * barcode['num_rows'];
             container.appendChild(canvas);
 
             var ctx = canvas.getContext('2d');
@@ -187,11 +239,11 @@
                 var x = 0;
                 for (var c = 0; c < barcode['num_cols']; ++c) {
                     if (barcode['bcode'][r][c] == 1) {
-                        ctx.fillRect(x, y, BW, BH);
+                        ctx.fillRect(x, y, bw, bh);
                     }
-                    x += BW;
+                    x += bw;
                 }
-                y += BH;
+                y += bh;
             }
             return canvas;
         }
@@ -219,8 +271,9 @@
 
         /* ---------- Save as SVG ---------- */
         function buildSVG(barcode) {
-            var w = BW * barcode['num_cols'];
-            var h = BH * barcode['num_rows'];
+            var bw = 2, bh = 2;
+            var w = bw * barcode['num_cols'];
+            var h = bh * barcode['num_rows'];
             var rects = [];
 
             for (var r = 0; r < barcode['num_rows']; ++r) {
@@ -230,8 +283,8 @@
                     if (filled && run_start < 0) {
                         run_start = c;
                     } else if (!filled && run_start >= 0) {
-                        rects.push('<rect x="' + (run_start * BW) + '" y="' + (r * BH) +
-                            '" width="' + ((c - run_start) * BW) + '" height="' + BH + '"/>');
+                        rects.push('<rect x="' + (run_start * bw) + '" y="' + (r * bh) +
+                            '" width="' + ((c - run_start) * bw) + '" height="' + bh + '"/>');
                         run_start = -1;
                     }
                 }
@@ -273,6 +326,14 @@
             link.click();
             setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
         }
+
+        var resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function() {
+                if (currentBarcode) renderToCanvas(currentBarcode);
+            }, 150);
+        });
 
         window.onload = function() {
             applyTheme(getPreferredTheme());
