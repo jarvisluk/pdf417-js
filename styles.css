@@ -1,0 +1,182 @@
+:root {
+    --bg: #f8f9fa;
+    --fg: #1a1a1a;
+    --card-bg: #fff;
+    --border: #ccc;
+    --border-light: #dee2e6;
+    --btn-bg: #fff;
+    --btn-hover-bg: #e9ecef;
+    --btn-hover-border: #adb5bd;
+    --primary: #228be6;
+    --primary-hover: #1971c2;
+    --hint: #868e96;
+    --textarea-bg: #fff;
+    --barcode-fg: #000;
+    --barcode-bg: #fff;
+}
+
+[data-theme="dark"] {
+    --bg: #1a1b1e;
+    --fg: #c9cdd1;
+    --card-bg: #25262b;
+    --border: #464a4f;
+    --border-light: #373a40;
+    --btn-bg: #2c2e33;
+    --btn-hover-bg: #373a40;
+    --btn-hover-border: #5c5f66;
+    --primary: #339af0;
+    --primary-hover: #228be6;
+    --hint: #909296;
+    --textarea-bg: #25262b;
+    --barcode-fg: #c9cdd1;
+    --barcode-bg: #25262b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 24px 16px;
+    color: var(--fg);
+    background: var(--bg);
+    transition: color 0.2s, background 0.2s;
+}
+
+h1 { font-size: 1.5rem; margin-bottom: 20px; }
+label { display: block; font-weight: 600; margin-bottom: 6px; }
+
+textarea {
+    width: 100%;
+    height: 180px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: var(--fg);
+    background: var(--textarea-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    resize: vertical;
+    transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0;
+    align-items: center;
+}
+
+button {
+    padding: 8px 18px;
+    font-size: 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--btn-bg);
+    color: var(--fg);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+button:hover { background: var(--btn-hover-bg); border-color: var(--btn-hover-border); }
+
+button.primary {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+button.primary:hover { background: var(--primary-hover); }
+
+.save-group {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.save-group button { font-size: 0.82rem; padding: 7px 14px; }
+
+#barcode {
+    margin: 16px 0;
+    padding: 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    text-align: center;
+    min-height: 60px;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.hint {
+    font-size: 0.82rem;
+    color: var(--hint);
+    margin-top: 8px;
+}
+
+.hint a { color: var(--primary); }
+
+.theme-toggle {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.theme-toggle svg { width: 18px; height: 18px; fill: var(--fg); transition: fill 0.2s; }
+.theme-toggle:hover { background: var(--btn-hover-bg); border-color: var(--btn-hover-border); }
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.header h1 { margin-bottom: 0; }
+
+#barcode canvas {
+    max-width: 100%;
+    height: auto;
+}
+
+@media (max-width: 600px) {
+    body { padding: 16px 12px; }
+    h1 { font-size: 1.2rem; }
+    textarea { height: 140px; font-size: 16px; }
+    .toolbar {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .toolbar button {
+        width: 100%;
+        padding: 12px 18px;
+        font-size: 1rem;
+        min-height: 44px;
+    }
+    .save-group {
+        margin-left: 0;
+        width: 100%;
+    }
+    .save-group button {
+        flex: 1;
+        padding: 12px 10px;
+        font-size: 0.9rem;
+        min-height: 44px;
+    }
+    #barcode { padding: 12px; overflow-x: auto; }
+    .theme-toggle { min-width: 44px; min-height: 44px; }
+}
+
+@media (max-width: 380px) {
+    body { padding: 12px 8px; }
+    h1 { font-size: 1.05rem; }
+    .save-group { flex-direction: column; }
+    .save-group button { width: 100%; }
+}

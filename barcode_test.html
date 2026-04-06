@@ -1,116 +1,229 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	
-	<title>PDF417 - 2D Barcode generator test</title>
-	       
-	<script src="bcmath-min.js" type="text/javascript"></script>
-    <script src="pdf417-min.js" type="text/javascript"></script>	    
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF417 - 2D Barcode Generator</title>
 
-    <script>  
+    <link rel="stylesheet" href="styles.css">
 
-        window.onload = function() { 
+    <script src="bcmath-min.js"></script>
+    <script src="pdf417-min.js"></script>
 
-            var hub3_code = "HRVHUB30\nHRK\n" + 
-                "000000000012355\n"+
-                "ZELJKO SENEKOVIC\n"+
-                "IVANECKA ULICA 125\n"+
-                "42000 VARAZDIN\n"+
-                "2DBK d.d.\n"+
-                "ALKARSKI PROLAZ 13B\n"+
-                "21230 SINJ\n"+
-                "HR1210010051863000160\n"+
-                "HR01\n"+
-                "7269-68949637676-00019\n"+
-                "COST\n"+
-                "Troskovi za 1. mjesec\n";   
+    <script>
+        var currentBarcode = null;
 
-            var textToEncode = document.getElementById("textToEncode");
-            textToEncode.value = hub3_code;   
-
-        	PDF417.init(hub3_code);           	
-
-            var barcode = PDF417.getBarcodeArray();
-
-            // block sizes (width and height) in pixels
-            var bw = 2;
-            var bh = 2;
-
-            // create canvas element based on number of columns and rows in barcode
-            var canvas = document.createElement('canvas');
-            canvas.width = bw * barcode['num_cols'];
-            canvas.height = bh * barcode['num_rows'];
-            document.getElementById('barcode').appendChild(canvas);
-
-            var ctx = canvas.getContext('2d');                    
-
-            // graph barcode elements
-            var y = 0;
-            // for each row
-            for (var r = 0; r < barcode['num_rows']; ++r) {
-                var x = 0;
-                // for each column
-                for (var c = 0; c < barcode['num_cols']; ++c) {
-                    if (barcode['bcode'][r][c] == 1) {                        
-                        ctx.fillRect(x, y, bw, bh);
-                    }
-                    x += bw;
-                }
-                y += bh;
-            }            
+        function getScale() {
+            var container = document.getElementById('barcode');
+            if (!container || !currentBarcode) return { bw: 2, bh: 2 };
+            var available = container.clientWidth - 32;
+            var cols = currentBarcode['num_cols'];
+            var bw = Math.max(1, Math.floor(available / cols));
+            bw = Math.min(bw, 3);
+            return { bw: bw, bh: bw };
         }
 
-        function generate() {
-            var textToEncode = document.getElementById("textToEncode");
+        function isDark() {
+            return document.documentElement.getAttribute('data-theme') === 'dark';
+        }
 
-            PDF417.init(textToEncode.value);             
+        var ICON_SUN = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/><style>path{stroke:currentColor;stroke-width:2;stroke-linecap:round;fill:none}circle{fill:currentColor}</style></svg>';
+        var ICON_MOON = '<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" fill="currentColor"/></svg>';
 
-            var barcode = PDF417.getBarcodeArray();
+        function applyTheme(dark) {
+            document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+            var btn = document.querySelector('.theme-toggle');
+            if (btn) btn.innerHTML = dark ? ICON_SUN : ICON_MOON;
+            if (currentBarcode) renderToCanvas(currentBarcode);
+        }
 
-            // block sizes (width and height) in pixels
-            var bw = 2;
-            var bh = 2;
+        function toggleTheme() {
+            var dark = !isDark();
+            applyTheme(dark);
+            try { localStorage.setItem('pdf417-theme', dark ? 'dark' : 'light'); } catch(e) {}
+        }
 
-            // create canvas element based on number of columns and rows in barcode
+        function getPreferredTheme() {
+            var saved = null;
+            try { saved = localStorage.getItem('pdf417-theme'); } catch(e) {}
+            if (saved) return saved === 'dark';
+            return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
+
+        document.documentElement.setAttribute('data-theme', getPreferredTheme() ? 'dark' : 'light');
+
+        function getBarcodeFg() {
+            return getComputedStyle(document.documentElement).getPropertyValue('--barcode-fg').trim() || '#000';
+        }
+
+        function renderToCanvas(barcode) {
             var container = document.getElementById('barcode');
-            container.removeChild(container.firstChild);
+            container.innerHTML = '';
+
+            var scale = getScale();
+            var bw = scale.bw, bh = scale.bh;
 
             var canvas = document.createElement('canvas');
             canvas.width = bw * barcode['num_cols'];
             canvas.height = bh * barcode['num_rows'];
             container.appendChild(canvas);
 
-            var ctx = canvas.getContext('2d');                    
-
-            // graph barcode elements
+            var ctx = canvas.getContext('2d');
+            ctx.fillStyle = getBarcodeFg();
             var y = 0;
-            // for each row
             for (var r = 0; r < barcode['num_rows']; ++r) {
                 var x = 0;
-                // for each column
                 for (var c = 0; c < barcode['num_cols']; ++c) {
-                    if (barcode['bcode'][r][c] == 1) {                        
+                    if (barcode['bcode'][r][c] == 1) {
                         ctx.fillRect(x, y, bw, bh);
                     }
                     x += bw;
                 }
                 y += bh;
-            }       
+            }
+            return canvas;
         }
-    
-    </script>
 
+        function generate() {
+            var text = document.getElementById('textToEncode').value;
+            if (!text) return;
+
+            PDF417.init(text);
+            currentBarcode = PDF417.getBarcodeArray();
+            renderToCanvas(currentBarcode);
+        }
+
+        /* ---------- Save as PNG ---------- */
+        function savePNG() {
+            if (!currentBarcode) { alert('Please generate a barcode first.'); return; }
+            var canvas = document.querySelector('#barcode canvas');
+            if (!canvas) return;
+
+            var link = document.createElement('a');
+            link.download = 'pdf417-barcode.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        /* ---------- Save as SVG ---------- */
+        function buildSVG(barcode) {
+            var bw = 2, bh = 2;
+            var w = bw * barcode['num_cols'];
+            var h = bh * barcode['num_rows'];
+            var rects = [];
+
+            for (var r = 0; r < barcode['num_rows']; ++r) {
+                var run_start = -1;
+                for (var c = 0; c <= barcode['num_cols']; ++c) {
+                    var filled = (c < barcode['num_cols'] && barcode['bcode'][r][c] == 1);
+                    if (filled && run_start < 0) {
+                        run_start = c;
+                    } else if (!filled && run_start >= 0) {
+                        rects.push('<rect x="' + (run_start * bw) + '" y="' + (r * bh) +
+                            '" width="' + ((c - run_start) * bw) + '" height="' + bh + '"/>');
+                        run_start = -1;
+                    }
+                }
+            }
+
+            return '<?xml version="1.0" encoding="UTF-8"?>\n' +
+                '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h +
+                '" viewBox="0 0 ' + w + ' ' + h + '">\n' +
+                '<rect width="100%" height="100%" fill="#fff"/>\n' +
+                '<g fill="#000">\n' + rects.join('\n') + '\n</g>\n</svg>';
+        }
+
+        function saveSVG() {
+            if (!currentBarcode) { alert('Please generate a barcode first.'); return; }
+            var svg = buildSVG(currentBarcode);
+            downloadText(svg, 'pdf417-barcode.svg', 'image/svg+xml');
+        }
+
+        /* ---------- Save as HTML ---------- */
+        function saveHTML() {
+            if (!currentBarcode) { alert('Please generate a barcode first.'); return; }
+            var svg = buildSVG(currentBarcode);
+            var html = '<!DOCTYPE html>\n<html lang="en">\n<head>\n' +
+                '<meta charset="utf-8"/>\n' +
+                '<title>PDF417 Barcode</title>\n' +
+                '<style>body{display:flex;justify-content:center;align-items:center;' +
+                'min-height:100vh;margin:0;background:#f8f9fa}</style>\n' +
+                '</head>\n<body>\n' + svg + '\n</body>\n</html>';
+            downloadText(html, 'pdf417-barcode.html', 'text/html');
+        }
+
+        /* ---------- Helper ---------- */
+        function downloadText(content, filename, mime) {
+            var blob = new Blob([content], { type: mime + ';charset=utf-8' });
+            var url = URL.createObjectURL(blob);
+            var link = document.createElement('a');
+            link.download = filename;
+            link.href = url;
+            link.click();
+            setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+        }
+
+        var resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function() {
+                if (currentBarcode) renderToCanvas(currentBarcode);
+            }, 150);
+        });
+
+        window.onload = function() {
+            applyTheme(getPreferredTheme());
+
+            if (window.matchMedia) {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+                    var saved = null;
+                    try { saved = localStorage.getItem('pdf417-theme'); } catch(ex) {}
+                    if (!saved) applyTheme(e.matches);
+                });
+            }
+
+            var hub3_code = "HRVHUB30\nHRK\n" +
+                "000000000012355\n" +
+                "ZELJKO SENEKOVIC\n" +
+                "IVANECKA ULICA 125\n" +
+                "42000 VARAZDIN\n" +
+                "2DBK d.d.\n" +
+                "ALKARSKI PROLAZ 13B\n" +
+                "21230 SINJ\n" +
+                "HR1210010051863000160\n" +
+                "HR01\n" +
+                "7269-68949637676-00019\n" +
+                "COST\n" +
+                "Troskovi za 1. mjesec\n";
+
+            document.getElementById('textToEncode').value = hub3_code;
+            generate();
+        };
+    </script>
 </head>
 <body>
-<p>Text to encode</p>
-<textarea id="textToEncode" style="width: 100%; height: 200px;"></textarea>
-<p><button onclick="generate()">Generate</button></p>
-<p>PDF417 2D barcode in canvas</p>
-<div id="barcode"></div>
-<p>(test using your mobile phone barcode scanner or right click on the barcode image and save as image file, 
-then decode using <a href="https://zxing.org/w/decode.jspx">https://zxing.org/w/decode.jspx</a>)</p>
-</body>
+    <div class="header">
+        <h1>PDF417 - 2D Barcode Generator</h1>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode"></button>
+    </div>
 
+    <label for="textToEncode">Text to encode</label>
+    <textarea id="textToEncode"></textarea>
+
+    <div class="toolbar">
+        <button class="primary" onclick="generate()">Generate</button>
+        <div class="save-group">
+            <button onclick="savePNG()">Save PNG</button>
+            <button onclick="saveSVG()">Save SVG</button>
+            <button onclick="saveHTML()">Save HTML</button>
+        </div>
+    </div>
+
+    <div id="barcode"></div>
+
+    <p class="hint">
+        Test using your mobile phone barcode scanner, or decode online at
+        <a href="https://zxing.org/w/decode.jspx">zxing.org</a>.
+    </p>
+</body>
 </html>
